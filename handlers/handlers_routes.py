@@ -16,14 +16,14 @@ def generate_options_keyboard(answer_options, right_answer):
     builder = InlineKeyboardBuilder()
 
     # В цикле создаем 4 Inline кнопки, а точнее Callback-кнопки
-    for option in answer_options:
+    for index, option in enumerate(answer_options):
         builder.add(types.InlineKeyboardButton(
             # Текст на кнопках соответствует вариантам ответов
             text=option,
             # Присваиваем данные для колбэк запроса.
             # Если ответ верный сформируется колбэк-запрос с данными 'right_answer'
             # Если ответ неверный сформируется колбэк-запрос с данными 'wrong_answer'
-            callback_data="right_answer" if option == right_answer else "wrong_answer")
+            callback_data="right_answer" if option == right_answer else f"wrong_answer:{index}")
         )
 
     # Выводим по одной кнопке в столбик
@@ -87,7 +87,7 @@ async def right_answer(callback: types.CallbackQuery):
     current_question_index = await get_quiz_index(callback.from_user.id)
 
     # Отправляем в чат сообщение, что ответ верный
-    await callback.message.answer("Верно!")
+    await callback.message.answer(f"Ваш ответ: {questions_list[current_question_index]['options'][questions_list[current_question_index]['correct_option']]} - Верно!")
 
     # Обновление номера текущего вопроса в базе данных
     current_question_index += 1
@@ -101,7 +101,7 @@ async def right_answer(callback: types.CallbackQuery):
         # Уведомление об окончании квиза
         await callback.message.answer("Это был последний вопрос. Квиз завершен!")
 
-@router.callback_query(F.data == "wrong_answer")
+@router.callback_query(F.data.startswith("wrong_answer:"))
 async def wrong_answer(callback: types.CallbackQuery):
     # редактируем текущее сообщение с целью убрать кнопки (reply_markup=None)
     await callback.bot.edit_message_reply_markup(
@@ -109,14 +109,15 @@ async def wrong_answer(callback: types.CallbackQuery):
         message_id=callback.message.message_id,
         reply_markup=None
     )
+    # Извлекаем индекс неправильного ответа из callback_data
+    wrong_index = int(callback.data.split(":")[1])
 
     # Получение текущего вопроса для данного пользователя
     current_question_index = await get_quiz_index(callback.from_user.id)
-
     correct_option = questions_list[current_question_index]['correct_option']
 
     # Отправляем в чат сообщение об ошибке с указанием верного ответа
-    await callback.message.answer(f"Неправильно. Правильный ответ: {questions_list[current_question_index]['options'][correct_option]}")
+    await callback.message.answer(f"Ваш ответ: {questions_list[current_question_index]['options'][wrong_index]} - Неправильно. Правильный ответ: {questions_list[current_question_index]['options'][correct_option]}")
 
     # Обновление номера текущего вопроса в базе данных
     current_question_index += 1
