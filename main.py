@@ -3,9 +3,8 @@ import logging
 from aiogram import Bot, Dispatcher
 
 from handlers.handlers_routes import router as common_router # Маршрутизация
-from database.db import create_table # Управление БД
-from token_bot import load_token # Загрузка токена
-API_TOKEN = load_token()
+from database.db import * # Управление БД
+from config import API_TOKEN, DB_NAME # Загрузка конфига
 
 # Включаем логирование, чтобы не пропустить важные сообщения
 logging.basicConfig(level=logging.INFO)
