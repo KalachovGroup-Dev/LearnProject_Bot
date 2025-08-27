@@ -1,17 +1,28 @@
-# This is a sample Python script.
+import asyncio
+import logging
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters.command import Command
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+# Включаем логирование, чтобы не пропустить важные сообщения
+logging.basicConfig(level=logging.INFO)
 
+# Замените "YOUR_BOT_TOKEN" на токен, который вы получили от BotFather
+from token_bot import load_token
+API_TOKEN = load_token()
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+# Объект бота
+bot = Bot(token=API_TOKEN)
+# Диспетчер
+dp = Dispatcher()
 
+# Хэндлер на команду /start
+@dp.message(Command("start"))
+async def cmd_start(message: types.Message):
+    await message.answer("Привет! Я твой новый бот.")
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+# Запуск процесса поллинга новых апдейтов
+async def main():
+    await dp.start_polling(bot)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
-# Тест
+if __name__ == "__main__":
+    asyncio.run(main())
