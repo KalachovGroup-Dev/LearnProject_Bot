@@ -1,14 +1,14 @@
 import asyncio
 import logging
 from aiogram import Bot, Dispatcher
-from handlers.handlers_routes import router as common_router
+
+from handlers.handlers_routes import router as common_router # Маршрутизация
+from database.db import create_table # Управление БД
+from token_bot import load_token # Загрузка токена
+API_TOKEN = load_token()
 
 # Включаем логирование, чтобы не пропустить важные сообщения
 logging.basicConfig(level=logging.INFO)
-
-# Замените "YOUR_BOT_TOKEN" на токен, который вы получили от BotFather
-from token_bot import load_token
-API_TOKEN = load_token()
 
 # Объект бота
 bot = Bot(token=API_TOKEN)
@@ -19,6 +19,10 @@ dp = Dispatcher()
 async def main():
     # Подключаем роутер
     dp.include_router(common_router)
+
+    # Запускаем создание таблицы базы данных
+    await create_table()
+
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
