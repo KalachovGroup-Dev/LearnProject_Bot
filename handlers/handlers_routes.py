@@ -33,7 +33,8 @@ def generate_options_keyboard(answer_options, right_answer):
 async def get_question(message, user_id):
 
     # Запрашиваем из базы текущий индекс для вопроса
-    current_question_index = await get_quiz_index(user_id)
+    current_question_index,count = await get_quiz_index(user_id)
+    print(current_question_index,count)
     # Получаем индекс правильного ответа для текущего вопроса
     correct_index = questions_list[current_question_index]['correct_option']
     # Получаем список вариантов ответа для текущего вопроса
@@ -49,8 +50,8 @@ async def new_quiz(message):
     # получаем id пользователя, отправившего сообщение
     user_id = message.from_user.id
     # сбрасываем значение текущего индекса вопроса квиза в 0
-    current_question_index = 0
-    await update_quiz_index(user_id, current_question_index)
+    current_question_index, count = 0, 0
+    await update_quiz_index(user_id, current_question_index, count)
 
     # запрашиваем новый вопрос для квиза
     await get_question(message, user_id)
@@ -84,14 +85,19 @@ async def right_answer(callback: types.CallbackQuery):
     )
 
     # Получение текущего вопроса для данного пользователя
-    current_question_index = await get_quiz_index(callback.from_user.id)
+    current_question_index,count = await get_quiz_index(callback.from_user.id)
 
     # Отправляем в чат сообщение, что ответ верный
     await callback.message.answer(f"Ваш ответ: {questions_list[current_question_index]['options'][questions_list[current_question_index]['correct_option']]} - Верно!")
 
     # Обновление номера текущего вопроса в базе данных
     current_question_index += 1
-    await update_quiz_index(callback.from_user.id, current_question_index)
+    if count == None or count == 0:
+        count = 0
+        count += 1
+    else:
+        count += 1
+    await update_quiz_index(callback.from_user.id, current_question_index,count)
 
     # Проверяем достигнут ли конец квиза
     if current_question_index < len(questions_list):
@@ -99,7 +105,7 @@ async def right_answer(callback: types.CallbackQuery):
         await get_question(callback.message, callback.from_user.id)
     else:
         # Уведомление об окончании квиза
-        await callback.message.answer("Это был последний вопрос. Квиз завершен!")
+        await callback.message.answer(f"Это был последний вопрос. Квиз завершен! Вы правильно ответили на {count} из {current_question_index} вопросов!")
 
 @router.callback_query(F.data.startswith("wrong_answer:"))
 async def wrong_answer(callback: types.CallbackQuery):
@@ -113,7 +119,7 @@ async def wrong_answer(callback: types.CallbackQuery):
     wrong_index = int(callback.data.split(":")[1])
 
     # Получение текущего вопроса для данного пользователя
-    current_question_index = await get_quiz_index(callback.from_user.id)
+    current_question_index,count = await get_quiz_index(callback.from_user.id)
     correct_option = questions_list[current_question_index]['correct_option']
 
     # Отправляем в чат сообщение об ошибке с указанием верного ответа
@@ -121,7 +127,7 @@ async def wrong_answer(callback: types.CallbackQuery):
 
     # Обновление номера текущего вопроса в базе данных
     current_question_index += 1
-    await update_quiz_index(callback.from_user.id, current_question_index)
+    await update_quiz_index(callback.from_user.id, current_question_index, count)
 
     # Проверяем достигнут ли конец квиза
     if current_question_index < len(questions_list):
@@ -129,4 +135,4 @@ async def wrong_answer(callback: types.CallbackQuery):
         await get_question(callback.message, callback.from_user.id)
     else:
         # Уведомление об окончании квиза
-        await callback.message.answer("Это был последний вопрос. Квиз завершен!")
+        await callback.message.answer(f"Это был последний вопрос. Квиз завершен! Вы правильно ответили на {count} из {current_question_index} вопросов!")
